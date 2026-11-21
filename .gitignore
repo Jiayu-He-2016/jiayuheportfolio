@@ -1,0 +1,59 @@
+# Reference PDFs, screenshots, and source artwork
+/Reference/
+
+# Local extraction and audit work
+/pdf-analysis/
+/pdf-extractions/
+/pdf-extracts/
+/pdf-previews/
+/AUDIT_SUMMARY.txt
+/COMPLETE_PROJECT_AUDIT.md
+/CONTENT_AUDIT.md
+/CONTENT_TO_PAGE_MAPPING.md
+/DETAIL_PAGES_IMPLEMENTATION_REPORT.md
+/IMPLEMENTATION_SUMMARY.md
+/RECONSTRUCTION_VERIFICATION_REPORT.md
+/REDESIGN_IMPLEMENTATION_SUMMARY.md
+/Project 1_raw.txt
+/Project 2_raw.txt
+/Research 1_raw.txt
+/Research 2_raw.txt
+/Research 3_raw.txt
+/Research 3 Additional_raw.txt
+/extracted_content.json
+/create_audit.py
+/detail-pages-content.js
+/detail-pages-content-reconstructed.js
+/detail-pages-content-redesign.js
+/pdf-detail-pages.js
+
+# Unused legacy assets not referenced by the site
+/assets/board/
+/assets/portrait.jpg
+/assets/project-images/project-1/
+/assets/project-images/project-2/
+/assets/project-images/research-1/
+/assets/project-images/research-2/
+/assets/project-images/research-3/
+/assets/project-images/research_3_content_additional/
+
+# Dependencies, build output, and local caches
+/node_modules/
+/dist/
+/build/
+/out/
+/coverage/
+/.vercel/
+/.cache/
+*.log
+*.tmp
+*.swp
+.DS_Store
+
+# Local secrets and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
