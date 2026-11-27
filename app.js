@@ -1,6 +1,5 @@
 const resumePath = "assets/resume.pdf";
 const cvPath = "assets/cv.pdf";
-const resumeBundlePath = "assets/Jiayu_He_Resume_and_CV.zip";
 const portfolioUiPath = "assets/portfolio-ui";
 const contact = {
   github: "https://github.com/Jiayu-He-2016",
@@ -14,6 +13,10 @@ function boardImage(number, label = "") {
     : 'aria-hidden="true"';
   const fileName = number === "pin" ? "pin.png" : `board-${number}.png`;
   return `<span class="png-crop png-${number}" ${accessibility}><img src="${portfolioUiPath}/board/${fileName}" alt="" draggable="false"></span>`;
+}
+
+function boardImageAsset(fileName) {
+  return `<span class="png-crop png-paper" aria-hidden="true"><img src="${portfolioUiPath}/board/${fileName}" alt="" draggable="false"></span>`;
 }
 
 const navigation = [
@@ -36,8 +39,8 @@ function renderNavigation(page) {
       <nav class="nav-links" aria-label="Main navigation">${links}</nav>
       <a class="brand" href="${sectionHref("home")}" aria-label="Jiayu He, home"><span>Jiayu He</span></a>
       <div class="nav-actions">
-        <a class="resume-link" href="${basePath}${resumePath}" download="Jiayu_He_Resume.pdf" aria-label="Download Resume PDF"><span aria-hidden="true">↗</span> Resume</a>
-        <a class="cv-link" href="${basePath}${cvPath}" download="Jiayu_He_CV.pdf" aria-label="Download CV PDF"><span aria-hidden="true">↗</span> CV</a>
+        <a class="resume-link" href="${basePath}${resumePath}" download="Jiayu_He_Resume.pdf" aria-label="Download Resume PDF"><svg class="download-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.5v10m0 0 4-4m-4 4-4-4M4 16.5h12"/></svg> Resume</a>
+        <a class="cv-link" href="${basePath}${cvPath}" download="Jiayu_He_CV.pdf" aria-label="Download CV PDF"><svg class="download-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.5v10m0 0 4-4m-4 4-4-4M4 16.5h12"/></svg> CV</a>
       </div>
     </header>`;
 }
@@ -67,8 +70,11 @@ function renderHome() {
         </div>
       </div>
 
-      <a class="board-item resume-paper tactile" href="${resumeBundlePath}" download="Jiayu_He_Resume_and_CV.zip" aria-label="Download Resume and CV as a ZIP file">
-        ${boardImage(5)}
+      <a class="board-item cv-paper board-download-note tactile" href="${cvPath}" download="Jiayu_He_CV.pdf" aria-label="Download CV PDF">
+        ${boardImageAsset("board-5-cv.png")}
+      </a>
+      <a class="board-item resume-paper board-download-note tactile" href="${resumePath}" download="Jiayu_He_Resume.pdf" aria-label="Download Resume PDF">
+        ${boardImageAsset("board-5-resume.png")}
       </a>
       <div class="board-item portrait-paper tactile">
         ${boardImage(7)}
@@ -85,8 +91,8 @@ function renderHome() {
       </a>
 
       <div class="board-item map-paper tactile">
-        ${boardImage(6, "Map marking Bellevue, Washington")}
-        <p class="map-note handwritten">Current coordinates:<br>Bellevue, WA</p>
+        ${boardImage(6, "Map marking Seattle, Washington")}
+        <p class="map-note handwritten">Current coordinates:<br>Seattle, WA</p>
       </div>
       <a class="board-item clue clue-left tactile" href="secret.html" aria-label="Open the hidden artwork and fun-facts page">
         ${boardImage(3, "Small evidence photograph")}
@@ -161,8 +167,8 @@ const folderPages = {
     openBackground: "projects-open.jpg",
     folderAsset: "board-1.png",
     files: [
-      { src: "project-file-1.png", className: "project-file--one", label: "Project 1", href: "projects/project-1/" },
-      { src: "project-file-2.png", className: "project-file--two", label: "Project 2", href: "projects/project-2/" },
+      { src: "project-file-1-new.png", className: "project-file--one", label: "Project 1", href: "projects/project-1/" },
+      { src: "project-file-2-new.png", className: "project-file--two", label: "Project 2", href: "projects/project-2/" },
     ],
   },
   research: {
@@ -1372,6 +1378,68 @@ function findFileLinkAtSourcePoint(view, layer, clientX, clientY, masks) {
   return mask.alpha[y * mask.width + x] >= 96 ? layer.querySelector(".file-hitbox") : null;
 }
 
+function setupBoardDownloadHitTesting() {
+  const notes = [...document.querySelectorAll(".board-download-note")];
+  if (!notes.length) return;
+
+  const masks = new WeakMap();
+  for (const note of notes) {
+    const image = note.querySelector("img");
+    if (!image) continue;
+
+    const prepareMask = () => {
+      const mask = createFileAlphaMask(image);
+      if (mask) masks.set(image, mask);
+    };
+    if (image.complete) prepareMask();
+    else image.addEventListener("load", prepareMask, { once: true });
+  }
+
+  document.addEventListener("click", (event) => {
+    if (event.detail === 0 || !(event.target instanceof Element)) return;
+    const targetNote = event.target.closest(".board-download-note");
+    if (!targetNote) return;
+
+    const candidates = notes.filter((note) => {
+      const bounds = note.getBoundingClientRect();
+      return event.clientX >= bounds.left && event.clientX <= bounds.right &&
+        event.clientY >= bounds.top && event.clientY <= bounds.bottom;
+    }).sort((a, b) => {
+      const zDifference = Number(getComputedStyle(b).zIndex) - Number(getComputedStyle(a).zIndex);
+      return zDifference || notes.indexOf(b) - notes.indexOf(a);
+    });
+
+    const hitNote = candidates.find((note) => {
+      const image = note.querySelector("img");
+      let mask = image && masks.get(image);
+      if (!mask && image?.complete && image.naturalWidth && image.naturalHeight) {
+        mask = createFileAlphaMask(image);
+        if (mask) masks.set(image, mask);
+      }
+      if (!mask || !image) return false;
+
+      const bounds = note.getBoundingClientRect();
+      const width = note.offsetWidth;
+      const height = note.offsetHeight;
+      if (!width || !height) return false;
+      const transformValue = getComputedStyle(note).transform;
+      const transform = transformValue === "none" ? new DOMMatrix() : new DOMMatrix(transformValue);
+      const point = new DOMPoint(
+        event.clientX - bounds.left - bounds.width / 2,
+        event.clientY - bounds.top - bounds.height / 2,
+      ).matrixTransform(transform.inverse());
+      const x = Math.floor((point.x + width / 2) / width * mask.width);
+      const y = Math.floor((point.y + height / 2) / height * mask.height);
+      return x >= 0 && x < mask.width && y >= 0 && y < mask.height && mask.alpha[y * mask.width + x] >= 96;
+    });
+
+    if (hitNote === targetNote) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    hitNote?.click();
+  }, true);
+}
+
 function setupFolderInteractions(fileMasks, hoveredLayerByView) {
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const transitionDuration = 1400;
@@ -1402,9 +1470,12 @@ function setupFolderInteractions(fileMasks, hoveredLayerByView) {
     document.dispatchEvent(new Event("portfolio:refresh-magnifier"));
   }
 
-  function finishTransition(page, from, to) {
+  function finishTransition(page, from, to, onFinish) {
     const timer = window.setTimeout(() => {
-      if (document.getElementById(page)?.dataset.state === from) setFolderState(page, to);
+      if (document.getElementById(page)?.dataset.state === from) {
+        setFolderState(page, to);
+        onFinish?.();
+      }
     }, transitionDuration);
     transitionTimers.set(page, timer);
   }
@@ -1420,15 +1491,23 @@ function setupFolderInteractions(fileMasks, hoveredLayerByView) {
     finishTransition(page, "opening", "open");
   }
 
-  function closeFolder(page) {
+  function scrollHomeAfterClose() {
+    const home = document.getElementById("home");
+    if (!home) return;
+    if (location.hash !== "#home") history.replaceState(null, "", "#home");
+    home.scrollIntoView({ behavior: reducedMotion.matches ? "auto" : "smooth", block: "start" });
+  }
+
+  function closeFolder(page, returnHome = false) {
     const section = document.getElementById(page);
     if (!section || section.dataset.state !== "open") return;
     if (reducedMotion.matches) {
       setFolderState(page, "closed");
+      if (returnHome) scrollHomeAfterClose();
       return;
     }
     setFolderState(page, "closing");
-    finishTransition(page, "closing", "closed");
+    finishTransition(page, "closing", "closed", returnHome ? scrollHomeAfterClose : undefined);
   }
 
   function cancelHomeShortcutTransition() {
@@ -1556,7 +1635,7 @@ function setupFolderInteractions(fileMasks, hoveredLayerByView) {
     }
 
     if (activatedFile) event.preventDefault();
-    closeFolder(openPage.id);
+    closeFolder(openPage.id, true);
   });
 
   document.addEventListener("keydown", (event) => {
@@ -1746,6 +1825,7 @@ document.querySelector("#app").innerHTML = page === "secret"
     : renderHome();
 if (page === "home") {
   setupSectionNavigation();
+  setupBoardDownloadHitTesting();
   const { fileMasks, hoveredLayerByView } = setupEvidenceFileInteractions();
   setupFolderInteractions(fileMasks, hoveredLayerByView);
   setupContactForm();
